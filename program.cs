@@ -38,13 +38,27 @@ namespace Implementeringsprojekt
 
 		static IEnumerable<(ulong, int)> CreateStream(int n, int l)
 		{
-			var rnd = new Random(12345);
+			var rnd = new Random();
 			byte[] b = new byte[8];
 			rnd.NextBytes(b);
 			ulong a = 0UL;
 			for (int i = 0; i < 8; ++i) a = (a << 8) + b[i];
+			// We demand that our random number has 30 zeros on the least significant
+			// bits and then a one, following the assignment's generator.
+			a = (a | ((1UL << 31) - 1UL)) ^ ((1UL << 30) - 1UL);
 			ulong x = 0UL;
-			ulong mask = l >= 64 ? ulong.MaxValue : ((1UL << l) - 1UL);
+			// mask = (((1UL << l) - 1UL) << 30)
+			ulong mask;
+			if (l >= 34)
+			{
+				// shifting >=64 would be undefined; clamp to all ones in practice
+				mask = ulong.MaxValue & (~((1UL << 30) - 1UL));
+			}
+			else
+			{
+				mask = ((1UL << l) - 1UL) << 30;
+			}
+
 			for (int i = 0; i < n/3; ++i)
 			{
 				x = unchecked(x + a);
