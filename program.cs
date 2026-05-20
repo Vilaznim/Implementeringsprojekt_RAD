@@ -127,5 +127,91 @@ namespace Implementeringsprojekt
 			sw.Stop();
 			Console.WriteLine($"Multiply-Mod-Prime: sum={sum_mp} time={sw.ElapsedMilliseconds}ms");
 		}
+        
+		static (BigInteger, long) ComputeQuadraticSum(IEnumerable<(ulong, int)> stream, Func<ulong, int> hash, int l)
+		{
+			var ht = new HashTableChaining(hash, l);
+			var sw = Stopwatch.StartNew();
+			foreach (var (x, d) in stream)
+			{
+				ht.Increment(x, d);
+			}
+			sw.Stop();
+			BigInteger S = BigInteger.Zero;
+			foreach (var e in ht.Entries())
+			{
+				BigInteger v = new BigInteger(e.Value);
+				S += v * v;
+			}
+			return (S, sw.ElapsedMilliseconds);
+		}
+	}
+
+	// Simple hashtabel med chaining. Nøgler er 64-bit, værdier er 64-bit signed (kan være negative).
+	public class HashTableChaining
+	{
+		public class Entry
+		{
+			public ulong Key;
+			public long Value;
+			public Entry(ulong k, long v) { Key = k; Value = v; }
+		}
+
+		private readonly List<Entry>[] buckets;
+		private readonly Func<ulong, int> hash;
+		private readonly int size;
+
+		public HashTableChaining(Func<ulong, int> hash, int l)
+		{
+			if (l < 0 || l > 30) throw new ArgumentOutOfRangeException(nameof(l), "l must be between 0 and 30 for array sizing");
+			this.hash = hash;
+			size = 1 << l;
+			buckets = new List<Entry>[size];
+			for (int i = 0; i < size; ++i) buckets[i] = new List<Entry>();
+		}
+
+		private List<Entry> BucketFor(ulong x)
+		{
+			int idx = hash(x);
+			return buckets[idx];
+		}
+
+		public long Get(ulong x)
+		{
+			var bucket = BucketFor(x);
+			for (int i = 0; i < bucket.Count; ++i)
+			{
+				if (bucket[i].Key == x) return bucket[i].Value;
+			}
+			return 0L;
+		}
+
+		public void Set(ulong x, long v)
+		{
+			var bucket = BucketFor(x);
+			for (int i = 0; i < bucket.Count; ++i)
+			{
+				if (bucket[i].Key == x) { bucket[i].Value = v; return; }
+			}
+			bucket.Add(new Entry(x, v));
+		}
+
+		public void Increment(ulong x, long d)
+		{
+			var bucket = BucketFor(x);
+			for (int i = 0; i < bucket.Count; ++i)
+			{
+				if (bucket[i].Key == x) { bucket[i].Value += d; return; }
+			}
+			bucket.Add(new Entry(x, d));
+		}
+
+		public IEnumerable<Entry> Entries()
+		{
+			foreach (var b in buckets)
+			{
+				foreach (var e in b) yield return e;
+			}
+		}
 	}
 }
