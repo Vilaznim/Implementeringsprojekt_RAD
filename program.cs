@@ -43,15 +43,15 @@ namespace Implementeringsprojekt
 			rnd.NextBytes(b);
 			ulong a = 0UL;
 			for (int i = 0; i < 8; ++i) a = (a << 8) + b[i];
-			// We demand that our random number has 30 zeros on the least significant
-			// bits and then a one, following the assignment's generator.
+			// we demand that our random number has 30 zeros on the least significant
+			// bits and then a one following the assignments generator.
 			a = (a | ((1UL << 31) - 1UL)) ^ ((1UL << 30) - 1UL);
 			ulong x = 0UL;
 			// mask = (((1UL << l) - 1UL) << 30)
 			ulong mask;
 			if (l >= 34)
 			{
-				// shifting >=64 would be undefined; clamp to all ones in practice
+				// shifting >=64 would be undefined clamp to all ones in practice
 				mask = ulong.MaxValue & (~((1UL << 30) - 1UL));
 			}
 			else
@@ -104,7 +104,7 @@ namespace Implementeringsprojekt
 			b_mp &= MersenneMask;
 
 			// warmup
-			Console.WriteLine("Warming up...");
+			Console.WriteLine("Warming up");
 			foreach (var _ in CreateStream(1000, l)) { }
 
 			// multiply-shift benchmark
