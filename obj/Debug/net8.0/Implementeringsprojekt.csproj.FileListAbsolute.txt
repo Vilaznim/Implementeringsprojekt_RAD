@@ -1,0 +1,15 @@
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\bin\Debug\net8.0\Implementeringsprojekt.exe
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\bin\Debug\net8.0\Implementeringsprojekt.deps.json
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\bin\Debug\net8.0\Implementeringsprojekt.runtimeconfig.json
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\bin\Debug\net8.0\Implementeringsprojekt.dll
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\bin\Debug\net8.0\Implementeringsprojekt.pdb
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\obj\Debug\net8.0\Implementeringsprojekt.GeneratedMSBuildEditorConfig.editorconfig
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\obj\Debug\net8.0\Implementeringsprojekt.AssemblyInfoInputs.cache
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\obj\Debug\net8.0\Implementeringsprojekt.AssemblyInfo.cs
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\obj\Debug\net8.0\Implementeringsprojekt.csproj.CoreCompileInputs.cache
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\obj\Debug\net8.0\Implementeringsprojekt.sourcelink.json
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\obj\Debug\net8.0\Implementeringsprojekt.dll
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\obj\Debug\net8.0\refint\Implementeringsprojekt.dll
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\obj\Debug\net8.0\Implementeringsprojekt.pdb
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\obj\Debug\net8.0\Implementeringsprojekt.genruntimeconfig.cache
+c:\Users\sonil\OneDrive\Skrivebord\2. år\blok 4\RAD\Implementeringsprojekt_RAD\obj\Debug\net8.0\ref\Implementeringsprojekt.dll
