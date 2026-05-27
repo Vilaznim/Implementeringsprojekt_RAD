@@ -1,0 +1,3 @@
+l,2^l,n,status_shift,distinct_keys_shift,time_ms_shift,S_shift,status_mod,distinct_keys_mod,time_ms_mod,S_mod
+24,16777216,300000000,ok,16777216,270912,598010112,ok,16777216,1394410,598010112
+25,33554432,300000000,ok,33554432,836216,300000000,timeout,-1,-1,0
