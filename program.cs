@@ -90,6 +90,23 @@ namespace Implementeringsprojekt
 			return (ulong x) => EvaluateG(a0, a1, a2, a3, x);
 		}
 
+		// Algorithm 2: derive h(x) and s(x) from the same 4-universal g(x).
+		// h(x) uses the t least significant bits, and s(x) depends on the top bit.
+		static (Func<ulong, ulong> h, Func<ulong, int> s) MakeCountSketchHashes(Func<ulong, BigInteger> g, int t)
+		{
+			if (t < 0 || t > 64) throw new ArgumentOutOfRangeException(nameof(t), "t must be between 0 and 64");
+			BigInteger hMask = (BigInteger.One << t) - 1;
+			return (
+				(ulong x) => (ulong)(g(x) & hMask),
+				(ulong x) =>
+				{
+					BigInteger gx = g(x);
+					int bx = (int)(gx >> 88); // b = 89, so b-1 = 88
+					return 1 - 2 * bx;
+				}
+			);
+		}
+
 		static (BigInteger, BigInteger, BigInteger, BigInteger) SampleGCoefficients(Random rnd)
 		{
 			return (SampleUniformInP(rnd), SampleUniformInP(rnd), SampleUniformInP(rnd), SampleUniformInP(rnd));
