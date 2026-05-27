@@ -53,6 +53,48 @@ namespace Implementeringsprojekt
 			return result;
 		}
 
+		// Mersenne reduction helper for p = 2^89 - 1
+		static BigInteger MersenneReduce(BigInteger t)
+		{
+			BigInteger mask = MersenneMask;
+			while (t > mask)
+			{
+				BigInteger low = t & mask;
+				BigInteger high = t >> 89;
+				t = low + high;
+			}
+			if (t >= P) t -= P;
+			return t;
+		}
+
+		// Evaluate g(x) = a0 + a1*x + a2*x^2 + a3*x^3 (mod p) in the same
+		// structure as Algorithm 1 from the assignment notes.
+		static BigInteger EvaluateG(BigInteger a0, BigInteger a1, BigInteger a2, BigInteger a3, ulong x)
+		{
+			BigInteger bx = new BigInteger(x);
+			BigInteger y = a3;
+			y = y * bx + a2;
+			y = (y & MersenneMask) + (y >> 89);
+			if (y >= P) y -= P;
+			y = y * bx + a1;
+			y = (y & MersenneMask) + (y >> 89);
+			if (y >= P) y -= P;
+			y = y * bx + a0;
+			y = (y & MersenneMask) + (y >> 89);
+			if (y >= P) y -= P;
+			return y;
+		}
+
+		static Func<ulong, BigInteger> MakeGFunction(BigInteger a0, BigInteger a1, BigInteger a2, BigInteger a3)
+		{
+			return (ulong x) => EvaluateG(a0, a1, a2, a3, x);
+		}
+
+		static (BigInteger, BigInteger, BigInteger, BigInteger) SampleGCoefficients(Random rnd)
+		{
+			return (SampleUniformInP(rnd), SampleUniformInP(rnd), SampleUniformInP(rnd), SampleUniformInP(rnd));
+		}
+
 		public static IEnumerable<Tuple<ulong, int>> CreateStream(int n, int l)
 		{
 			// We generate a random uint64 number .
