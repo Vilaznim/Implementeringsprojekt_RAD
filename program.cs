@@ -133,7 +133,7 @@ namespace Implementeringsprojekt
 		static Func<ulong, int> MakeMultiplyShiftHash(ulong a_ms, int l) => (ulong x) => (int)MultiplyShift(a_ms, x, l);
 
 		static Func<ulong, int> MakeMultiplyModPrimeHash(BigInteger a_mp, BigInteger b_mp, int l) => (ulong x) => (int)MultiplyModPrime(a_mp, b_mp, x, l);
-
+ 
 		static void RunOpgave3(int n, int minLOverride, int maxLOverride)
 		{
 			// timeout per algorithm run in milliseconds (detect "tager for lang tid")
