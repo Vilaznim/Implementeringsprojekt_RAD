@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -132,9 +133,12 @@ namespace Implementeringsprojekt
 		static Func<ulong, int> MakeMultiplyShiftHash(ulong a_ms, int l) => (ulong x) => (int)MultiplyShift(a_ms, x, l);
 
 		static Func<ulong, int> MakeMultiplyModPrimeHash(BigInteger a_mp, BigInteger b_mp, int l) => (ulong x) => (int)MultiplyModPrime(a_mp, b_mp, x, l);
-
+ 
 		static void RunOpgave3(int n, int minLOverride, int maxLOverride)
 		{
+			// timeout per algorithm run in milliseconds (detect "tager for lang tid")
+			const int perRunTimeoutMs = 1800000; // 30 minutes (in milliseconds)
+
 			Console.WriteLine("\nRunning Opgave 3 experiments (Compute S with chaining)");
 
 			int maxL = (int)Math.Floor(Math.Log(n, 2));
@@ -200,9 +204,19 @@ namespace Implementeringsprojekt
 				{
 					Console.WriteLine("  computing S with multiply-shift hash...");
 					var h_shift = MakeMultiplyShiftHash(a_ms, lVal);
-					var resultShift = ComputeQuadraticSum(streamList, h_shift, lVal);
-					(S_shift, t_shift, count_shift) = resultShift;
-					Console.WriteLine($"  shift done: distinct={count_shift} time={t_shift}ms S={S_shift}");
+					var taskShift = Task.Run(() => ComputeQuadraticSum(streamList, h_shift, lVal));
+					if (taskShift.Wait(perRunTimeoutMs))
+					{
+						var resultShift = taskShift.Result;
+						(S_shift, t_shift, count_shift) = resultShift;
+						Console.WriteLine($"  shift done: distinct={count_shift} time={t_shift}ms S={S_shift}");
+					}
+					else
+					{
+						statusShift = "timeout";
+						stoppedEarly = true;
+						Console.WriteLine("  shift: timeout");
+					}
 				}
 				catch (OutOfMemoryException)
 				{
@@ -215,9 +229,19 @@ namespace Implementeringsprojekt
 				{
 					Console.WriteLine("  computing S with multiply-mod-prime hash...");
 					var h_mod = MakeMultiplyModPrimeHash(a_mp, b_mp, lVal);
-					var resultMod = ComputeQuadraticSum(streamList, h_mod, lVal);
-					(S_mod, t_mod, count_mod) = resultMod;
-					Console.WriteLine($"  mod done: distinct={count_mod} time={t_mod}ms S={S_mod}");
+					var taskMod = Task.Run(() => ComputeQuadraticSum(streamList, h_mod, lVal));
+					if (taskMod.Wait(perRunTimeoutMs))
+					{
+						var resultMod = taskMod.Result;
+						(S_mod, t_mod, count_mod) = resultMod;
+						Console.WriteLine($"  mod done: distinct={count_mod} time={t_mod}ms S={S_mod}");
+					}
+					else
+					{
+						statusMod = "timeout";
+						stoppedEarly = true;
+						Console.WriteLine("  mod: timeout");
+					}
 				}
 				catch (OutOfMemoryException)
 				{
