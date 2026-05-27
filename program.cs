@@ -341,6 +341,20 @@ namespace Implementeringsprojekt
 			}
 			return (S, sw.ElapsedMilliseconds, count);
 		}
+
+		// Compute Count-Sketch estimate X = sum_y C[y]^2 using provided h and s
+		static (BigInteger, long) ComputeCountSketch(IEnumerable<Tuple<ulong, int>> stream, Func<ulong, ulong> h, Func<ulong, int> s, int t)
+		{
+			if (t < 0 || t > 30) throw new ArgumentOutOfRangeException(nameof(t), "t must be between 0 and 30 for practical array sizing");
+			var cs = new CountSketch(t);
+			var sw = Stopwatch.StartNew();
+			foreach (var item in stream)
+			{
+				cs.Update(item.Item1, item.Item2, h, s);
+			}
+			sw.Stop();
+			return (cs.EstimateX(), sw.ElapsedMilliseconds);
+		}
 	}
 
 	// Simple hashtabel med chaining. Nøgler er 64-bit, værdier er 64-bit signed (kan være negative).
@@ -409,5 +423,43 @@ namespace Implementeringsprojekt
 				foreach (var e in b) yield return e;
 			}
 		}
+	}
+}
+
+// Count-Sketch implementation
+public class CountSketch
+{
+	private readonly long[] C;
+	private readonly int m;
+
+	public CountSketch(int t)
+	{
+		if (t < 0 || t > 30) throw new ArgumentOutOfRangeException(nameof(t), "t must be between 0 and 30 for array sizing");
+		m = 1 << t;
+		C = new long[m];
+	}
+
+	public void Update(ulong x, int d, Func<ulong, ulong> h, Func<ulong, int> s)
+	{
+		ulong idx = h(x);
+		int sid = s(x);
+		// idx must fit into int because m <= 2^30
+		C[(int)idx] += (long)sid * d;
+	}
+
+	public BigInteger EstimateX()
+	{
+		BigInteger sum = BigInteger.Zero;
+		for (int i = 0; i < m; ++i)
+		{
+			BigInteger v = new BigInteger(C[i]);
+			sum += v * v;
+		}
+		return sum;
+	}
+
+	public void Reset()
+	{
+		Array.Clear(C, 0, m);
 	}
 }
