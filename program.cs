@@ -454,6 +454,7 @@ namespace Implementeringsprojekt
 		{
 			if (distinctL < 1 || distinctL > 30) throw new ArgumentOutOfRangeException(nameof(distinctL), "distinctL must be between 1 and 30");
 			if (experiments < 1) throw new ArgumentOutOfRangeException(nameof(experiments), "experiments must be positive");
+			if (experiments != 100) throw new ArgumentException("Opgave 7 requires exactly 100 experiments as specified in the assignment. Call with experiments=100 or omit the argument.", nameof(experiments));
 			if (tValues == null || tValues.Length == 0) throw new ArgumentException("At least one t value is required", nameof(tValues));
 
 			var streamList = new List<Tuple<ulong, int>>();
