@@ -475,7 +475,7 @@ namespace Implementeringsprojekt
 
 			var summaryLines = new List<string>
 			{
-				"n,distinctL,distinctKeys,experiments,t,m,exactS,exact_time_ms,mse,avg_sketch_time_ms,min_sketch_time_ms,max_sketch_time_ms"
+				"n,distinctL,distinctKeys,experiments,t,m,exactS,exact_time_ms,mse,avg_sketch_time_ms,min_sketch_time_ms,max_sketch_time_ms,avg_sketch_time_ms_double,speedup,ch_sketch_memory_bytes,chaining_memory_est_bytes"
 			};
 
 			foreach (int t in tValues)
@@ -561,9 +561,14 @@ namespace Implementeringsprojekt
 				System.IO.File.WriteAllLines($"{baseName}_medians_sorted.csv", sortedMedianLines);
 				System.IO.File.WriteAllLines($"{baseName}_groups.csv", medianGroupRawLines);
 
-				summaryLines.Add($"{n},{distinctL},{exactDistinctKeys},{experiments},{t},{1 << t},{exactS},{exactTimeMs},{mse.ToString(System.Globalization.CultureInfo.InvariantCulture)},{avgTime.ToString(System.Globalization.CultureInfo.InvariantCulture)},{minTime},{maxTime}");
+				// additional metrics for Opgave 8: speedup and memory estimates
+				double avgTimeDouble = avgTime; // ms
+				double speedup = avgTimeDouble > 0.0 ? (double)exactTimeMs / avgTimeDouble : double.PositiveInfinity;
+				long sketchMemoryBytes = (1L << t) * 8L; // one 64-bit counter per bucket
+				long chainingMemoryEst = (long)exactDistinctKeys * 32L; // rough estimate ~32 bytes per distinct key
+				summaryLines.Add($"{n},{distinctL},{exactDistinctKeys},{experiments},{t},{1 << t},{exactS},{exactTimeMs},{mse.ToString(System.Globalization.CultureInfo.InvariantCulture)},{avgTime.ToString(System.Globalization.CultureInfo.InvariantCulture)},{minTime},{maxTime},{avgTimeDouble.ToString(System.Globalization.CultureInfo.InvariantCulture)},{speedup.ToString(System.Globalization.CultureInfo.InvariantCulture)},{sketchMemoryBytes},{chainingMemoryEst}");
 
-				Console.WriteLine($"  t={t}: mse={mse.ToString(System.Globalization.CultureInfo.InvariantCulture)}, avg_time={avgTime.ToString(System.Globalization.CultureInfo.InvariantCulture)} ms");
+				Console.WriteLine($"  t={t}: mse={mse.ToString(System.Globalization.CultureInfo.InvariantCulture)}, avg_time={avgTime.ToString(System.Globalization.CultureInfo.InvariantCulture)} ms, speedup={speedup.ToString(System.Globalization.CultureInfo.InvariantCulture)}, sketch_mem={sketchMemoryBytes} bytes, chaining_mem_est={chainingMemoryEst} bytes");
 			}
 
 			System.IO.File.WriteAllLines("opgave7_summary.csv", summaryLines);
