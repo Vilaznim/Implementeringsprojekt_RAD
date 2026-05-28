@@ -21,6 +21,15 @@ namespace Implementeringsprojekt
 
 		static BigInteger MersenneMask => (BigInteger.One << 89) - 1;
 
+		static ulong SampleOddUlong(Random rnd)
+		{
+			byte[] buf = new byte[8];
+			rnd.NextBytes(buf);
+			ulong value = 0UL;
+			for (int i = 0; i < 8; ++i) value = (value << 8) + buf[i];
+			return value | 1UL;
+		}
+
 		static BigInteger SampleUniformInP(Random rnd)
 		{
 			byte[] raw = new byte[12];
@@ -143,6 +152,16 @@ namespace Implementeringsprojekt
 
 		static void Main(string[] args)
 		{
+			if (args.Length > 0 && string.Equals(args[0], "opgave7", StringComparison.OrdinalIgnoreCase))
+			{
+				int opgave7N = args.Length > 1 ? int.Parse(args[1]) : 200000;
+				int opgave7DistinctL = args.Length > 2 ? int.Parse(args[2]) : GetSuggestedOpgave7DistinctL(opgave7N);
+				int[] opgave7TValues = args.Length > 3 ? ParseIntList(args[3]) : BuildDefaultOpgave7TValues(opgave7DistinctL);
+				int opgave7Experiments = args.Length > 4 ? int.Parse(args[4]) : 100;
+				RunOpgave7(opgave7N, opgave7DistinctL, opgave7TValues, opgave7Experiments);
+				return;
+			}
+
 			int n = args.Length > 0 ? int.Parse(args[0]) : 200000;
 			int l = args.Length > 1 ? int.Parse(args[1]) : 16;
 			int opgave3MinL = args.Length > 2 ? int.Parse(args[2]) : -1;
@@ -355,6 +374,201 @@ namespace Implementeringsprojekt
 			sw.Stop();
 			return (cs.EstimateX(), sw.ElapsedMilliseconds);
 		}
+
+		static (BigInteger, long) ComputeCountSketch(IEnumerable<Tuple<ulong, int>> stream, Func<ulong, BigInteger> g, int t)
+		{
+			if (t < 0 || t > 30) throw new ArgumentOutOfRangeException(nameof(t), "t must be between 0 and 30 for practical array sizing");
+			var cs = new CountSketch(t);
+			BigInteger hMask = (BigInteger.One << t) - 1;
+			var sw = Stopwatch.StartNew();
+			foreach (var item in stream)
+			{
+				BigInteger gx = g(item.Item1);
+				ulong bucket = (ulong)(gx & hMask);
+				int bit = (int)(gx >> 88);
+				int sign = 1 - 2 * bit;
+				cs.Update(bucket, sign, item.Item2);
+			}
+			sw.Stop();
+			return (cs.EstimateX(), sw.ElapsedMilliseconds);
+		}
+
+		static int[] ParseIntList(string csv)
+		{
+			string[] parts = csv.Split(',', StringSplitOptions.RemoveEmptyEntries);
+			var values = new List<int>();
+			foreach (var part in parts)
+			{
+				if (int.TryParse(part.Trim(), out int value)) values.Add(value);
+			}
+			return values.ToArray();
+		}
+
+		static int[] BuildDefaultOpgave7TValues(int distinctL)
+		{
+			if (distinctL <= 2) return new[] { 1 };
+			int low = Math.Max(1, distinctL - 7);
+			int mid = Math.Max(1, distinctL - 5);
+			int high = Math.Max(1, distinctL - 3);
+			var values = new List<int>();
+			foreach (int candidate in new[] { low, mid, high })
+			{
+				if (!values.Contains(candidate) && candidate <= 30) values.Add(candidate);
+			}
+			values.Sort();
+			return values.ToArray();
+		}
+
+		static int GetSuggestedOpgave7DistinctL(int fallbackN)
+		{
+			string path = "opgave3_results.csv";
+			if (!System.IO.File.Exists(path))
+			{
+				return Math.Max(1, (int)Math.Floor(Math.Log(fallbackN, 2)) - 1);
+			}
+
+			string[] lines = System.IO.File.ReadAllLines(path);
+			int lastOkL = -1;
+			int lastSeenL = -1;
+			for (int i = 1; i < lines.Length; ++i)
+			{
+				if (string.IsNullOrWhiteSpace(lines[i])) continue;
+				string[] parts = lines[i].Split(',');
+				if (parts.Length < 8) continue;
+				if (!int.TryParse(parts[0], out int lValue)) continue;
+				lastSeenL = Math.Max(lastSeenL, lValue);
+				string statusShift = parts[3].Trim();
+				string statusMod = parts[7].Trim();
+				if (!string.Equals(statusShift, "ok", StringComparison.OrdinalIgnoreCase) || !string.Equals(statusMod, "ok", StringComparison.OrdinalIgnoreCase))
+				{
+					return Math.Max(1, lValue - 1);
+				}
+				lastOkL = lValue;
+			}
+			if (lastOkL >= 1) return lastOkL;
+			if (lastSeenL >= 2) return Math.Max(1, lastSeenL - 1);
+			return Math.Max(1, (int)Math.Floor(Math.Log(fallbackN, 2)) - 1);
+		}
+
+		static void RunOpgave7(int n, int distinctL, int[] tValues, int experiments)
+		{
+			if (distinctL < 1 || distinctL > 30) throw new ArgumentOutOfRangeException(nameof(distinctL), "distinctL must be between 1 and 30");
+			if (experiments < 1) throw new ArgumentOutOfRangeException(nameof(experiments), "experiments must be positive");
+			if (tValues == null || tValues.Length == 0) throw new ArgumentException("At least one t value is required", nameof(tValues));
+
+			var streamList = new List<Tuple<ulong, int>>();
+			foreach (var item in CreateStream(n, distinctL))
+			{
+				streamList.Add(item);
+			}
+
+			Console.WriteLine($"\nRunning Opgave 7 with n={n}, distinctL={distinctL}, distinctKeys={1 << distinctL}, experiments={experiments}");
+
+			var exactRnd = new Random(20260528);
+			ulong exactA = SampleOddUlong(exactRnd);
+			var exactHash = MakeMultiplyShiftHash(exactA, distinctL);
+			var exactResult = ComputeQuadraticSum(streamList, exactHash, distinctL);
+			BigInteger exactS = exactResult.Item1;
+			long exactTimeMs = exactResult.Item2;
+			int exactDistinctKeys = exactResult.Item3;
+			Console.WriteLine($"Exact S={exactS} computed in {exactTimeMs} ms with {exactDistinctKeys} distinct keys");
+
+			var summaryLines = new List<string>
+			{
+				"n,distinctL,distinctKeys,experiments,t,m,exactS,exact_time_ms,mse,avg_sketch_time_ms,min_sketch_time_ms,max_sketch_time_ms"
+			};
+
+			foreach (int t in tValues)
+			{
+				if (t < 0 || t > 30)
+				{
+					Console.WriteLine($"Skipping t={t} because it is outside the supported range 0..30");
+					continue;
+				}
+
+				Console.WriteLine($"Running Count-Sketch experiments for t={t} (m={1 << t})...");
+				var experimentValues = new List<BigInteger>();
+				var experimentTimes = new List<long>();
+				var experimentSeeds = new List<int>();
+				var rawLines = new List<string> { "experiment,X,time_ms" };
+				var rng = new Random(100000 + t);
+
+				for (int experiment = 1; experiment <= experiments; ++experiment)
+				{
+					var coeffs = SampleGCoefficients(rng);
+					var g = MakeGFunction(coeffs.Item1, coeffs.Item2, coeffs.Item3, coeffs.Item4);
+					var hashes = MakeCountSketchHashes(g, t);
+					var sketchResult = ComputeCountSketch(streamList, hashes.h, hashes.s, t);
+					experimentValues.Add(sketchResult.Item1);
+					experimentTimes.Add(sketchResult.Item2);
+					experimentSeeds.Add(experiment);
+					rawLines.Add($"{experiment},{sketchResult.Item1},{sketchResult.Item2}");
+				}
+
+				var sortedValues = new List<BigInteger>(experimentValues);
+				sortedValues.Sort();
+				var sortedLines = new List<string> { "rank,X" };
+				for (int i = 0; i < sortedValues.Count; ++i)
+				{
+					sortedLines.Add($"{i + 1},{sortedValues[i]}");
+				}
+
+				var medianValues = new List<BigInteger>();
+				var medianLines = new List<string> { "group,median" };
+				var medianGroupRawLines = new List<string> { "group,observations" };
+				for (int group = 0; group < 9; ++group)
+				{
+					var groupValues = new List<BigInteger>();
+					var groupEntries = new List<string>();
+					for (int i = 0; i < 11; ++i)
+					{
+						groupValues.Add(experimentValues[group * 11 + i]);
+						groupEntries.Add(experimentValues[group * 11 + i].ToString());
+					}
+					groupValues.Sort();
+					BigInteger median = groupValues[5];
+					medianValues.Add(median);
+					medianLines.Add($"{group + 1},{median}");
+					medianGroupRawLines.Add($"{group + 1},[{string.Join(";", groupEntries)}]");
+				}
+				medianValues.Sort();
+				var sortedMedianLines = new List<string> { "rank,median" };
+				for (int i = 0; i < medianValues.Count; ++i)
+				{
+					sortedMedianLines.Add($"{i + 1},{medianValues[i]}");
+				}
+
+				double mse = 0.0;
+				long minTime = long.MaxValue;
+				long maxTime = long.MinValue;
+				long totalTime = 0;
+				for (int i = 0; i < experimentValues.Count; ++i)
+				{
+					double diff = (double)(experimentValues[i] - exactS);
+					mse += diff * diff;
+					long time = experimentTimes[i];
+					if (time < minTime) minTime = time;
+					if (time > maxTime) maxTime = time;
+					totalTime += time;
+				}
+				mse /= experiments;
+				double avgTime = (double)totalTime / experiments;
+
+				string baseName = $"opgave7_n{n}_l{distinctL}_t{t}";
+				System.IO.File.WriteAllLines($"{baseName}_raw.csv", rawLines);
+				System.IO.File.WriteAllLines($"{baseName}_sorted.csv", sortedLines);
+				System.IO.File.WriteAllLines($"{baseName}_medians.csv", medianLines);
+				System.IO.File.WriteAllLines($"{baseName}_medians_sorted.csv", sortedMedianLines);
+				System.IO.File.WriteAllLines($"{baseName}_groups.csv", medianGroupRawLines);
+
+				summaryLines.Add($"{n},{distinctL},{exactDistinctKeys},{experiments},{t},{1 << t},{exactS},{exactTimeMs},{mse.ToString(System.Globalization.CultureInfo.InvariantCulture)},{avgTime.ToString(System.Globalization.CultureInfo.InvariantCulture)},{minTime},{maxTime}");
+
+				Console.WriteLine($"  t={t}: mse={mse.ToString(System.Globalization.CultureInfo.InvariantCulture)}, avg_time={avgTime.ToString(System.Globalization.CultureInfo.InvariantCulture)} ms");
+			}
+
+			System.IO.File.WriteAllLines("opgave7_summary.csv", summaryLines);
+			Console.WriteLine("Wrote opgave7_summary.csv and per-t experiment CSV files");
+		}
 	}
 
 	// Simple hashtabel med chaining. Nøgler er 64-bit, værdier er 64-bit signed (kan være negative).
@@ -439,12 +653,14 @@ public class CountSketch
 		C = new long[m];
 	}
 
+	public void Update(ulong bucketIndex, int sign, int d)
+	{
+		C[(int)bucketIndex] += (long)sign * d;
+	}
+
 	public void Update(ulong x, int d, Func<ulong, ulong> h, Func<ulong, int> s)
 	{
-		ulong idx = h(x);
-		int sid = s(x);
-		// idx must fit into int because m <= 2^30
-		C[(int)idx] += (long)sid * d;
+		Update(h(x), s(x), d);
 	}
 
 	public BigInteger EstimateX()

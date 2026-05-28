@@ -1,5 +1,6 @@
 bin/
 obj/
+opgave7_*.csv
 *.user
 *.suo
 *.cache

@@ -38,6 +38,20 @@ Du kan også angive egne værdier for `n` og `l`:
 dotnet run -- 200000 16
 ```
 
+Kør Opgave 7-eksperimenterne med:
+
+```powershell
+dotnet run -- opgave7 200000
+```
+
+Du kan også angive egne værdier for `n`, `l`-grænsen og `t`-værdierne:
+
+```powershell
+dotnet run -- opgave7 200000 17 10,12,14 100
+```
+
+Dette skriver `opgave7_summary.csv` samt per-`t` CSV-filer med rå, sorterede og median-baserede estimater.
+
 ## Bemærkning om filer
 
 `.gitignore` er sat op til at ignorere `bin/` og `obj/`, så build-filer ikke skal med i aflevering eller versionering.
